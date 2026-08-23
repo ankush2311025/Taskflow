@@ -133,7 +133,7 @@ Swagger UI is available locally at:
 
 Raw OpenAPI specification:
 
-**http://localhost:3000/api-docs/openapi.json**
+**https://documenter.getpostman.com/view/39337258/2sBYAswB9G**
 
 The OpenAPI specification documents request bodies, parameters, authentication, responses and error responses for the implemented API.
 
