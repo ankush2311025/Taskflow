@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.*
+.vscode
+.idea
+.agents
+.claude
+.windsurf
+skills-lock.json
+npm-debug.log*
+*.log

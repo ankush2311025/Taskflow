@@ -9,10 +9,7 @@ export const taskWorker = new Worker(
   "task-queue",
   async (job) => {
     if (job.name === "task-assigned") {
-      console.log(
-        "Task assigned job received:",
-        job.data
-      );
+      console.log("Task assigned job received:", job.data);
 
       const { taskId, userId } = job.data;
 
@@ -26,14 +23,23 @@ export const taskWorker = new Worker(
         throw new Error("Assigned user not found");
       }
 
-      await sendTaskAssignmentEmail(
-        user.email,
-        taskId
-      );
+      try {
+        await sendTaskAssignmentEmail(
+          user.email,
+          taskId
+        );
 
-      console.log(
-        `Task assignment email sent to ${user.email}`
-      );
+        console.log(
+          `Task assignment email sent to ${user.email}`
+        );
+      } catch (error) {
+        console.error(
+          `Failed to send task assignment email to ${user.email}:`,
+          error
+        );
+
+        throw error;
+      }
     }
   },
   {
