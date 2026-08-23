@@ -289,9 +289,20 @@ Taskflow/
 ├── .env.example
 ├── .gitignore
 └── README.md
-API Documentation
 
-Complete API documentation is maintained in Postman, including:
+## API Documentation
+
+### Swagger UI
+
+Interactive API documentation is available locally at:
+
+[Open Swagger UI](http://localhost:3000/api-docs)
+
+### Postman
+
+Complete API documentation and testing collection:
+
+[Open TaskFlow API Documentation](https://documenter.getpostman.com/view/39337258/2sBYAswB9G)
 
 All endpoints
 Request bodies
@@ -300,7 +311,6 @@ Authentication
 Authorization
 Example requests and responses
 
-Open TaskFlow API Collection →
 
 Error Handling
 
@@ -318,7 +328,6 @@ Common responses:
 409  Conflict
 500  Internal Server Error
 Future Improvements
-Swagger / OpenAPI
 Automated unit & integration tests
 CI/CD
 Rate limiting
