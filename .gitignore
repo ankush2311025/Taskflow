@@ -37,3 +37,7 @@ temp/
 
 # Prisma
 # Keep migrations/schema, ignore generated client if applicable
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
