@@ -1,131 +1,79 @@
 # TaskFlow
 
-A production-oriented backend task management system built with **Node.js, TypeScript, Express, PostgreSQL, Prisma, Redis, BullMQ, JWT and Docker**.
+A backend task management system built with **Node.js, TypeScript, Express, PostgreSQL, Prisma, Redis, BullMQ, JWT and Docker**.
 
-TaskFlow provides organization-based task management with authentication, role-based access control, project management, task management, task assignments, comments, background job processing and email notifications.
-
----
+TaskFlow supports organization-based task management, RBAC, projects, tasks, assignments, comments and asynchronous email notifications.
 
 ## Features
 
-- JWT-based authentication
-- Access and refresh token system
-- Organization management
-- Organization membership
-- Role-Based Access Control (RBAC)
-- `org_admin` and `member` roles
-- Project management
-- Task management
-- Task status and priority management
+- JWT access + refresh authentication
+- Organization and member management
+- Role-Based Access Control (`org_admin`, `member`)
+- Project and task management
 - Task filtering and pagination
-- Task assignment and unassignment
-- Duplicate task assignment prevention
+- Task assignment / unassignment
+- Duplicate assignment protection
 - Task comments
-- Project dashboard
-- PostgreSQL database with Prisma ORM
-- Redis-based background processing
-- BullMQ task queue
-- Dedicated background worker
+- Zod request validation
+- PostgreSQL + Prisma
+- Redis + BullMQ background jobs
 - Asynchronous task assignment emails
 - Automatic job retries with exponential backoff
-- Request validation using Zod
-- Centralized application error handling
 - Dockerized API, worker, PostgreSQL and Redis
 
----
-
-# Tech Stack
+## Tech Stack
 
 | Technology | Purpose |
 |---|---|
-| Node.js | Runtime |
-| TypeScript | Programming language |
+| Node.js + TypeScript | Backend |
 | Express.js | REST API |
-| PostgreSQL | Primary database |
+| PostgreSQL | Database |
 | Prisma | ORM |
-| Redis | Queue backend |
-| BullMQ | Background job processing |
-| Nodemailer | Email delivery |
+| Redis + BullMQ | Background jobs |
 | JWT | Authentication |
-| Zod | Request validation |
-| Docker | Containerization |
-| Docker Compose | Multi-container orchestration |
+| Zod | Validation |
+| Nodemailer | Email |
+| Docker Compose | Infrastructure |
 
----
-
-# Architecture
-
-TaskFlow follows a layered backend architecture.
+## Architecture
 
 ```text
-                    ┌──────────────────┐
-                    │      Client      │
-                    │ Postman / Frontend│
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │   Express API    │
-                    │     :3000        │
-                    └────────┬─────────┘
-                             │
-              ┌──────────────┼──────────────┐
-              │              │              │
-              ▼              ▼              ▼
-        ┌───────────┐   ┌──────────┐   ┌───────────┐
-        │ PostgreSQL│   │  Redis   │   │ JWT / RBAC│
-        └─────┬─────┘   └────┬─────┘   └───────────┘
-              │              │
-              ▼              ▼
-           Prisma       BullMQ Queue
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │  Task Worker     │
-                    └────────┬─────────┘
-                             │
-                             ▼
-                    ┌──────────────────┐
-                    │ Email Service    │
-                    │   Nodemailer     │
-                    └──────────────────┘
-Request Flow
-Route
-  ↓
-Authentication
-  ↓
-RBAC
-  ↓
-Validation
-  ↓
-Controller
-  ↓
-Service
-  ↓
-Repository
-  ↓
-Prisma
-  ↓
-PostgreSQL
-Task Assignment Flow
-Assign Task
-    ↓
-Validate Membership
-    ↓
-Create Assignment
-    ↓
-BullMQ → Redis
-    ↓
-Worker
-    ↓
-Email Notification
+Client / Postman
+      │
+      ▼
+ Express API
+      │
+ ┌────┼───────────────┐
+ ▼    ▼               ▼
+DB   Redis          JWT/RBAC
+     │
+     ▼
+ BullMQ Queue
+     │
+     ▼
+ Task Worker
+     │
+     ▼
+ Nodemailer → Email
+```
 
-The email is processed asynchronously, so the API does not wait for email delivery.
+Application flow:
 
-Database
+```text
+Route → Auth → RBAC → Validation → Controller → Service → Repository → Prisma → PostgreSQL
+```
+
+Task assignment:
+
+```text
+Assign Task → DB Assignment → BullMQ → Redis → Worker → Email
+```
+
+## Database
 
 Main entities:
 
+```text
 User
 Organization
 OrgMember
@@ -134,117 +82,148 @@ Task
 TaskAssignment
 Comment
 RefreshToken
+```
 
-Relationships:
+Key relationships:
 
+```text
 User ───< OrgMember >─── Organization
 Organization ───< Project ───< Task
 Task ───< TaskAssignment >─── User
 Task ───< Comment >─── User
 User ───< RefreshToken
+```
 
-Task assignments are protected by:
+Task assignments are protected by application validation and:
 
-Application validation
-        +
-Database unique constraint
-        +
-Deterministic BullMQ job ID
-
-Database constraint:
-
+```prisma
 @@unique([taskId, userId])
-Authentication & RBAC
+```
 
-Authentication uses JWT access and refresh tokens.
+## Authentication & RBAC
 
-Protected requests:
+Protected requests use:
 
+```http
 Authorization: Bearer <access_token>
+```
 
 Roles:
 
-Permission	Admin	Member
-Manage Organization	✅	❌
-Create Project	✅	❌
-View Projects	✅	✅
-Create Task	✅	❌
-View Tasks	✅	✅
-Update Task	✅	✅
-Delete Task	✅	❌
-Assign Task	✅	❌
-Update Assigned Task Status	✅	✅
-Comments	✅	✅
-Background Jobs
+| Operation | Admin | Member |
+|---|:---:|:---:|
+| Manage Organization | ✅ | ❌ |
+| Create Project | ✅ | ❌ |
+| View Projects | ✅ | ✅ |
+| Create Task | ✅ | ❌ |
+| View Tasks | ✅ | ✅ |
+| Update Task | ✅ | ✅ |
+| Delete Task | ✅ | ❌ |
+| Assign Task | ✅ | ❌ |
+| Update Assigned Task Status | ✅ | ✅ |
+| Comments | ✅ | ✅ |
+
+## API Documentation
+
+### Swagger / OpenAPI
+
+Swagger UI is available locally at:
+
+**http://localhost:3000/api-docs**
+
+Raw OpenAPI specification:
+
+**http://localhost:3000/api-docs/openapi.json**
+
+The OpenAPI specification documents request bodies, parameters, authentication, responses and error responses for the implemented API.
+
+### Postman
+
+The ready-to-import collection is available at:
+
+`postman/TaskFlow.postman_collection.json`
+
+Import it into Postman. The collection uses `{{baseUrl}}` and automatically captures authentication/resource IDs during the setup flow.
+
+## Background Jobs
 
 Queue:
 
+```text
 task-queue
+```
 
 Job:
 
+```text
 task-assigned
+```
 
-Example payload:
+Jobs are configured with:
 
-{
-  "taskId": "<task-id>",
-  "userId": "<user-id>",
-  "orgId": "<organization-id>"
-}
-
-Worker:
-
-node dist/src/modules/Task/task.worker.js
-
-Jobs use:
-
+```text
 3 attempts
 Exponential backoff
 5 second initial delay
-Docker
+```
 
-The application runs as four services:
+Worker command:
 
+```bash
+node dist/src/modules/Task/task.worker.js
+```
+
+## Docker
+
+Services:
+
+```text
 taskflow-api
 taskflow-worker
 taskflow-postgres
 taskflow-redis
+```
 
-Start everything:
+Start:
 
+```bash
 docker compose up -d --build
+```
 
-Check services:
+Check:
 
+```bash
 docker compose ps
+```
 
 Stop:
 
+```bash
 docker compose down
-
-API:
-
-http://localhost:3000
-
-API Base URL:
-
-http://localhost:3000/api/v1
+```
 
 Logs:
 
+```bash
 docker logs -f taskflow-api
 docker logs -f taskflow-worker
-docker logs -f taskflow-postgres
-docker logs -f taskflow-redis
-Environment Variables
+```
 
-Create a .env file using .env.example as the template.
+API:
 
+```text
+http://localhost:3000
+```
+
+## Environment
+
+Create `.env` from `.env.example`.
+
+```env
 PORT=3000
 
-DB_PASSWORD=your_database_password
-DATABASE_URL=postgresql://taskflow:your_database_password@localhost:5432/taskflow
+DB_PASSWORD=your_postgres_password
+DATABASE_URL=postgresql://taskflow:your_postgres_password@localhost:5432/taskflow
 
 REDIS_URL=redis://localhost:6379
 
@@ -256,15 +235,22 @@ JWT_REFRESH_SECRET=your_refresh_secret
 
 JWT_ACCESS_EXPIRATION=15m
 JWT_REFRESH_EXPIRATION=7d
+```
 
-Never commit .env or real credentials to GitHub.
+Never commit `.env` or real credentials.
 
-Local Development
+## Local Development
+
+```bash
 npm install
 npx prisma generate
 npx prisma migrate deploy
 npm run dev
-Project Structure
+```
+
+## Project Structure
+
+```text
 Taskflow/
 ├── src/
 │   ├── config/
@@ -278,61 +264,58 @@ Taskflow/
 │   ├── routes/
 │   ├── services/
 │   ├── utils/
-│   └── server.ts
+│   └── docs/
 │
 ├── prisma/
-│   └── schema.prisma
-│
+├── docs/
+│   └── openapi.json
+├── postman/
+│   └── TaskFlow.postman_collection.json
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .dockerignore
 ├── .env.example
-├── .gitignore
 └── README.md
+```
 
-## API Documentation
+## Error Handling
 
-### Swagger UI
+Centralized error handling is used with common responses:
 
-Interactive API documentation is available locally at:
-
-[Open Swagger UI](http://localhost:3000/api-docs)
-
-### Postman
-
-Complete API documentation and testing collection:
-
-[Open TaskFlow API Documentation](https://documenter.getpostman.com/view/39337258/2sBYAswB9G)
-
-All endpoints
-Request bodies
-Parameters
-Authentication
-Authorization
-Example requests and responses
-
-
-Error Handling
-
-Centralized error handling with AppError.
-
-Common responses:
-
+```text
 200  Success
 201  Created
-204  Deleted
+204  No Content
 400  Bad Request
 401  Unauthorized
 403  Forbidden
 404  Not Found
 409  Conflict
 500  Internal Server Error
-Future Improvements
-Automated unit & integration tests
-CI/CD
-Rate limiting
-Structured logging
-Monitoring & metrics
-Kubernetes deployment
-Horizontal worker scaling
-Open TaskFlow API Collection →
+```
+
+## Security
+
+- JWT authentication
+- Password hashing
+- Refresh token persistence
+- Organization-level authorization
+- Task assignment authorization
+- Zod validation
+- Database unique constraints
+- Environment-based secrets
+- `.env` excluded from Git
+
+## Future Improvements
+
+- Automated unit/integration tests
+- CI/CD
+- Rate limiting
+- Structured logging
+- Monitoring and metrics
+- Kubernetes deployment
+- Horizontal worker scaling
+
+## License
+
+Developed for backend engineering and educational purposes.
