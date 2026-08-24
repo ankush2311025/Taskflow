@@ -145,6 +145,17 @@ The ready-to-import collection is available at:
 
 Import it into Postman. The collection uses `{{baseUrl}}` and automatically captures authentication/resource IDs during the setup flow.
 
+## 🚀 Deployment
+
+The application is fully containerized and deployment-ready using Docker and Docker Compose.
+
+### Local Deployment
+
+The complete application can be run locally with:
+
+```bash
+docker compose up -d --build
+
 ## Background Jobs
 
 Queue:
